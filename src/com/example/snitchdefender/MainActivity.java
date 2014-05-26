@@ -1,65 +1,144 @@
 package com.example.snitchdefender;
 
-import android.support.v7.app.ActionBarActivity;
-import android.support.v7.app.ActionBar;
-import android.support.v4.app.Fragment;
+import de.example.helloandroid.R;
+import android.app.Activity;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.media.MediaPlayer;
 import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.os.Build;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends Activity implements SensorEventListener {
+	private SensorManager sensorManager;
+	
+	private MediaPlayer mp; 
+	
+	ImageView imageLogo1,imageLine1;
+	ImageButton imageButton1;
+	TextView xValue,yValue,zValue; 
+	TextView max_view_x,max_view_y,max_view_z; 
+	float xmax,ymax,zmax;
+	float xmax_abs,ymax_abs,zmax_abs;
+	float x_compare,y_compare,z_compare;
+	boolean sound_X_Check = false;
+	float limitValue = 3;
+	float limitValueZ = 9;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+	
+	@Override
+	public void onCreate(Bundle savedInstanceState){
+		
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.fragment_main);
+		
+		imageLine1 = (ImageView) findViewById(R.id.imageLine1);
+		imageLogo1 = (ImageView) findViewById(R.id.imageLogo1);
+		
+		addButtonListener();
+		
+		xValue=(TextView)findViewById(R.id.xcoor);
+		yValue=(TextView)findViewById(R.id.ycoor); 
+		zValue=(TextView)findViewById(R.id.zcoor); 
+		max_view_x = (TextView)findViewById(R.id.max_x_text);
+		max_view_y = (TextView)findViewById(R.id.max_y_text);
+		max_view_z = (TextView)findViewById(R.id.max_z_text);
+		
+		sensorManager=(SensorManager)getSystemService(SENSOR_SERVICE);
+		sensorManager.registerListener(this, 
+				sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
+				SensorManager.SENSOR_DELAY_NORMAL);
+		}
+	
+	
+	public void addButtonListener() {
+		 
+		imageButton1 = (ImageButton) findViewById(R.id.imageButton1);
+		imageButton1.setOnClickListener(new OnClickListener() {
+ 
+			public void onClick(View v) {
+				stopSound();
+			 //  Toast.makeText(HelloAndroid.this,
+			 //	"klick klick bla bla", Toast.LENGTH_SHORT).show();
+			}
+		});
+	}
+	
+	
 
-        if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new PlaceholderFragment())
-                    .commit();
+	public void onAccuracyChanged(Sensor sensor,int accuracy){}
+	
+	public void onSensorChanged(SensorEvent event){
+		
+		if(event.sensor.getType()==Sensor.TYPE_ACCELEROMETER){
+			
+			float x = event.values[0];
+			float y = event.values[1];
+			float z = event.values[2];
+			
+			//Werte anzeigen in Activity (ersten 3 TextViews)
+			xValue.setText("X: "+ x);
+			yValue.setText("Y: "+ y);
+			zValue.setText("Z: "+ z);
+			
+			//Betrag ermitteln
+			xmax = Math.abs(x);
+			ymax = Math.abs(y);
+			zmax = Math.abs(z);
+
+				if(xmax > x_compare){
+					max_view_x.setText("max-x: " + xmax);
+					x_compare = xmax;
+				}
+				
+				if(ymax > y_compare){
+					max_view_y.setText("max-y: " + ymax);
+					y_compare = ymax;
+				}
+				
+				if(zmax > z_compare){
+					max_view_z.setText("max-z: " + zmax);
+					z_compare = zmax;
+				}	
+			}
+		
+		if(zmax < limitValueZ){
+			sound_X_Check = true;
+		}
+			if(sound_X_Check == true){
+				startSound();
+			}	
+	}
+	
+	
+	
+	public void startSound(){
+		//Audio audio = new Audio();
+    	if (mp == null) {
+        	mp = MediaPlayer.create(MainActivity.this, R.raw.sound);
+        		mp.start();	
         }
     }
+    
 
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
+    public void stopSound() {
+        if (mp != null) {
+            mp.stop();
+            mp.release();
+            mp = null;
+			sound_X_Check = false;
+			
+       }
     }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
-    /**
-     * A placeholder fragment containing a simple view.
-     */
-    public static class PlaceholderFragment extends Fragment {
-
-        public PlaceholderFragment() {
-        }
-
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-            return rootView;
-        }
-    }
-
+	
+	
+	
+	
 }
